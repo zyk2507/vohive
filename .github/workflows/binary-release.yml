@@ -84,15 +84,23 @@ jobs:
       - name: Configure Git for private modules
         env:
           GH_PAT: ${{ secrets.GH_PAT }}
+          PRIVATE_MODULE_OWNER: ${{ vars.PRIVATE_MODULE_OWNER || github.repository_owner }}
           REPOSITORY_OWNER: ${{ github.repository_owner }}
         run: |
+          go env -w GOPRIVATE="github.com/iniwex5/*,github.com/${PRIVATE_MODULE_OWNER}/*,github.com/${REPOSITORY_OWNER}/*"
+
+          if [ "${PRIVATE_MODULE_OWNER}" != "iniwex5" ]; then
+            if [ -n "${GH_PAT}" ]; then
+              git config --global url."https://x-access-token:${GH_PAT}@github.com/${PRIVATE_MODULE_OWNER}/".insteadOf "https://github.com/iniwex5/"
+            else
+              git config --global url."https://github.com/${PRIVATE_MODULE_OWNER}/".insteadOf "https://github.com/iniwex5/"
+            fi
+          fi
+
           if [ -n "${GH_PAT}" ]; then
             git config --global url."https://x-access-token:${GH_PAT}@github.com/${REPOSITORY_OWNER}/".insteadOf "https://github.com/${REPOSITORY_OWNER}/"
-            if [ "${REPOSITORY_OWNER}" != "iniwex5" ]; then
-              git config --global url."https://x-access-token:${GH_PAT}@github.com/iniwex5/".insteadOf "https://github.com/iniwex5/"
-              go env -w GOPRIVATE="github.com/${REPOSITORY_OWNER}/*,github.com/iniwex5/*"
-            else
-              go env -w GOPRIVATE="github.com/${REPOSITORY_OWNER}/*"
+            if [ "${PRIVATE_MODULE_OWNER}" != "${REPOSITORY_OWNER}" ]; then
+              git config --global url."https://x-access-token:${GH_PAT}@github.com/${PRIVATE_MODULE_OWNER}/".insteadOf "https://github.com/${PRIVATE_MODULE_OWNER}/"
             fi
           fi
 
